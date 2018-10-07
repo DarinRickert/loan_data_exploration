@@ -1,0 +1,409 @@
+Loan Data Exploration by Darin Rickert
+========================================================
+
+# An Analysis of loan data from Prosper
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load the csv file containing the loan data
+# ld = loan data
+getwd()
+ld <- read.csv('prosperLoanData.csv')
+
+# Load the ggplot library
+library(ggplot2)
+```
+
+```{r echo=FALSE, Load_the_Data}
+# List of variables to be explored
+
+# New data frame with only the columns of interest
+ld2 <- data.frame(ld$ListingCreationDate, ld$CreditGrade, ld$Term, ld$LoanStatus, ld$ClosedDate, ld$BorrowerAPR, ld$LenderYield, ld$BorrowerState, ld$Occupation, ld$MonthlyLoanPayment, ld$StatedMonthlyIncome, ld$ProsperRating..Alpha., ld$ListingCategory..numeric.)
+
+names(ld2)
+
+summary(ld2)
+
+```
+
+> **Information**: This data set contains 113,937 loans with 81 variables on each loan. The data set was simplified to make this analysis using only 13 of the variables. All loan data was obtained after July of 2009.
+
+> This report contains 3 sections that include plots and and summaries and one final section with concluding plots and an analysis.
+
+# Univariate Plots Section
+
+```{r echo=FALSE, Univariate_Plots}
+library(gridExtra)
+
+p1 <- ggplot(aes(x = ld.Term), data = ld2) +
+  geom_histogram()
+p2 <- ggplot(aes(x = ld.BorrowerAPR), data = ld2) +
+  geom_histogram()
+p3 <- ggplot(aes(x = ld.LenderYield), data = ld2) +
+  geom_histogram()
+p4 <- ggplot(aes(x = ld.MonthlyLoanPayment), data = ld2) +
+  geom_histogram()
+p5 <- ggplot(aes(x = ld.StatedMonthlyIncome), data = ld2) +
+  geom_histogram()
+p6 <- ggplot(aes(x = ld.LoanStatus), data = ld2) +
+  geom_bar()
+p7 <- ggplot(aes(x = ld.Occupation), data = ld2) +
+  geom_bar()
+p8 <- ggplot(aes(x = ld.ProsperRating..Alpha.), data = ld2) +
+  geom_bar()
+
+
+grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8)
+```
+
+> These histograms give us a general idea about how the data is structured.
+
+```{r echo=FALSE, Univariate_Plots_Edited}
+library(gridExtra)
+
+p1 <- ggplot(aes(x = ld.Term), data = ld2, binwidth = 1) +
+  geom_histogram() +
+  scale_x_continuous(breaks = seq(12,60,12))
+p2 <- ggplot(aes(x = ld.BorrowerAPR), 
+             data = ld2, binwidth = 500) + 
+  geom_histogram() +
+  scale_x_continuous(breaks = seq(0,0.5,0.1))
+p3 <- ggplot(aes(x = ld.LenderYield), data = ld2) +
+  geom_histogram()
+p4 <- ggplot(aes(x = ld.MonthlyLoanPayment), 
+             data = ld2) +
+  geom_histogram() +
+  scale_x_continuous(breaks = seq(0,1000,250)) +
+  coord_cartesian(xlim = c(0,1000))
+p5 <- ggplot(aes(x = ld.StatedMonthlyIncome), 
+             data = subset(ld2, ld.StatedMonthlyIncome < 20000)) +
+  geom_histogram() 
+  
+
+grid.arrange(p1,p2,p3,p4,p5)
+```
+
+> These plots are refined to present a clearer picture of some of the variables.
+
+```{r echo=FALSE, Univariate_Plots1}
+# Monthly incomes of borrowers with a good rating 
+ggplot(aes(x = ld.StatedMonthlyIncome), 
+       data = subset(ld2, ld.ProsperRating..Alpha. == 'A' | ld.ProsperRating..Alpha. == 'AA' )) +
+  geom_histogram(bins = 100) +
+  scale_x_continuous(breaks = seq(0,20000,2000)) +
+  coord_cartesian(xlim = c(0,20000)) 
+
+
+```
+
+```{r echo=FALSE, Univariate_Plots2}
+
+
+# Monthly incomes of borrowers with a bad rating
+ggplot(aes(x = ld.StatedMonthlyIncome), 
+       data = subset(ld2, ld.ProsperRating..Alpha. == 'HR' | ld.ProsperRating..Alpha. == 'E' )) +
+  geom_histogram(bins = 5000) +
+  scale_x_continuous(breaks = seq(0,20000,2000)) +
+  coord_cartesian(xlim = c(0,10000)) 
+ 
+
+```
+
+> These plots compare the monthly incomes of loan borrowers. The first plot contains incomes of those who have good Prosper ratings (AA or A) while the second plot contains incomes of those with bad Prosper ratings (HR or E).
+
+# Univariate Analysis
+
+### Data set structure
+
+There are 113,937 loans being observed and 13 variables that are explored. 
+
+Variables explored:
+
+- Listing Creation Date      
+- Credit Grade              
+- Term                     
+- Loan Status               
+- Closed Date              
+- Borrower APR              
+- Lender Yield              
+- Borrower State            
+- Occupation               
+- Monthly Loan Payment       
+- Stated Monthly Income      
+- Prosper Rating    
+- Listing Category
+
+Here is a [link](https://docs.google.com/spreadsheets/d/1gDyi_L4UvIrLTEC6Wri5nbaMmkGmLQBk-Yx3z0XDEtI/edit#gid=0) to the variable definitions.
+
+### Main points of interest 
+
+Most of the loans are for 36 months. The borrower APR and lender yields are very similar. Most monthly loan payments fall between $100 and $200. The majority of borrowers' monthly incomes are between $3000 and $5000. 
+
+### Other helpful features
+
+I would like to explore different variables that might affect the monthly loan payment of borrowers. 
+
+### Adjustments to the data
+
+The only adjustments I made were to the scales of the axes in order to provide a clear picture of the data. The plot of monthly incomes was adjusted to include only incomes under $20,000 per month.
+
+
+# Bivariate Plots Section
+
+> In this section various variables will be compared with monthly loan payments and lender yields to determine any relationships that might exist.
+
+```{r echo=FALSE, Bivariate_Plots}
+
+ggplot(aes(x = ld.StatedMonthlyIncome, 
+  y = ld.MonthlyLoanPayment), data = ld2) +
+  geom_point(color = "blue", alpha = 0.2, position = 'jitter') +
+  xlim(0, quantile(ld2$ld.StatedMonthlyIncome, 0.99)) +
+  ylim(0, quantile(ld2$ld.MonthlyLoanPayment, 0.99)) +
+  geom_smooth(color = "red")
+
+
+```
+
+
+```{r echo=FALSE, Bivariate_Plots1}
+
+ggplot(aes(x = ld.BorrowerAPR, 
+  y = ld.MonthlyLoanPayment), data = ld2) +
+  geom_point(alpha = 0.2, position = 'jitter') +
+  coord_cartesian(xlim = c(0, 0.6)) +
+  geom_smooth(color = "red")
+  
+
+```
+
+
+```{r echo=FALSE, Bivariate_Plots2}
+
+ggplot(aes(x = ld.Term, 
+  y = ld.MonthlyLoanPayment), data = ld2) +
+  geom_point() +
+  scale_x_continuous(breaks = c(12,36,60))
+  
+
+```
+
+
+```{r echo=FALSE, Bivariate_Plots3}
+
+ggplot(aes(x = ld.StatedMonthlyIncome, 
+  y = ld.LenderYield), data = ld2) +
+  geom_point(alpha = 0.2, position = 'jitter') +
+  xlim(0, quantile(ld2$ld.StatedMonthlyIncome, 0.99)) +
+  ylim(0, 0.4) +
+  geom_smooth()
+
+```
+
+```{r echo=FALSE, Bivariate_Plots4}
+
+ld2$ld.MonthlyPaymentOfIncome <- ld2$ld.MonthlyLoanPayment/ld2$ld.StatedMonthlyIncome
+
+ggplot(aes(x = ld.Occupation, 
+  y = ld.MonthlyPaymentOfIncome), data = subset(ld2, !is.na(ld.Occupation) & ld.Occupation == "Professional" | ld.Occupation == "Computer Programmer" | ld.Occupation == "Executive" | ld.Occupation == "Teacher" | ld.Occupation == "Sales - Retail" | ld.Occupation == "Administrative Assistant")) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0,0.5))
+
+```
+
+
+```{r echo=FALSE, Bivariate_Plots5}
+
+ggplot(aes(x = ld.LoanStatus, 
+  y = ld.MonthlyLoanPayment), data = subset(ld2, !is.na(ld.LoanStatus) & ld.LoanStatus == "Completed" | ld.LoanStatus == "Current" | ld.LoanStatus == "Chargedoff" | ld.LoanStatus == "Defaulted" | ld.LoanStatus == "Past Due (1-15 days)" | ld.LoanStatus == "Past Due (31-60 days)")) +
+  geom_boxplot()
+
+```
+
+
+```{r echo=FALSE, Bivariate_Plots6}
+
+ggplot(aes(x = ld.Occupation, 
+  y = ld.MonthlyLoanPayment), data = subset(ld2, !is.na(ld.Occupation) & ld.Occupation == "Professional" | ld.Occupation == "Computer Programmer" | ld.Occupation == "Executive" | ld.Occupation == "Teacher" | ld.Occupation == "Sales - Retail" | ld.Occupation == "Administrative Assistant")) +
+  geom_boxplot()
+  
+  table(ld2$ld.Occupation)
+
+```
+
+```{r echo=FALSE, Bivariate_Plots7}
+
+ggplot(aes(x = ld.Occupation, 
+  y = ld.StatedMonthlyIncome), data = subset(ld2, ld.StatedMonthlyIncome < 30000 & !is.na(ld.Occupation) & ld.Occupation == "Professional" | ld.Occupation == "Computer Programmer" | ld.Occupation == "Executive" | ld.Occupation == "Teacher" | ld.Occupation == "Sales - Retail" | ld.Occupation == "Administrative Assistant")) +
+  geom_boxplot() +
+  ylim(0,20000)
+  
+
+```
+
+
+```{r echo=FALSE, Bivariate_Plots8}
+ggplot(aes(x = ld.BorrowerState, 
+  y = ld.MonthlyLoanPayment), data = subset(ld2, !is.na(ld.BorrowerState) & ld.BorrowerState == "CA" | ld.BorrowerState == "FL" | ld.BorrowerState == "GA" | ld.BorrowerState == "IL" | ld.BorrowerState == "TX" | ld.BorrowerState == "NY" | ld.BorrowerState == "WI")) +
+  geom_boxplot()
+  
+  table(ld2$ld.BorrowerState)
+```
+
+```{r echo=FALSE, Bivariate_Plots9}
+ggplot(aes(x = ld.BorrowerState, 
+  y = ld.StatedMonthlyIncome), data = subset(ld2, ld.StatedMonthlyIncome < 20000 & !is.na(ld.BorrowerState) & ld.BorrowerState == "CA" | ld.BorrowerState == "FL" | ld.BorrowerState == "GA" | ld.BorrowerState == "IL" | ld.BorrowerState == "TX" | ld.BorrowerState == "NY" | ld.BorrowerState == "WI")) +
+  geom_boxplot() +
+  ylim(0,20000)
+  
+  table(ld2$ld.BorrowerState)
+```
+
+```{r echo=FALSE, Bivariate_Plots10}
+ggplot(aes(x = ld.BorrowerAPR, 
+  y = ld.LenderYield), data = ld2) +
+  geom_point(alpha = 0.2, position = 'jitter') +
+  geom_smooth()
+```
+
+
+# Bivariate Analysis
+
+### Points of Interest
+
+The relationship was not strong, but in general those with higher incomes had higher monthly payments. However, it is important to note based on the box plots that occupations with higher incomes such as executives and computer programmers had lower monthly payments as a percentage of their incomes.
+
+Higher monthly loan payments (over $1000) are typically only 12 months while lower monthly loan payments tend to be spread out over 36 or 60 months.
+
+It is interesting to note that on average the lender yield is higher for those that have lower incomes. 
+
+### The strongest relationship
+
+As expected, borrower APR and lender yield have a very close relationship. This makes sense since lender make money based on the interest that the borrowers are paying.
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, Multivariate_Plots}
+
+ggplot(aes(x = ld.StatedMonthlyIncome, 
+  y = ld.MonthlyLoanPayment), data = subset(ld2, ld.CreditGrade == "A" | ld.CreditGrade == "AA" | ld.CreditGrade == "HR" | ld.CreditGrade == "E" | ld.CreditGrade == "NC")) +
+  geom_point(aes(color = ld.CreditGrade), alpha = 0.2, position = 'jitter') +
+  xlim(0, 10000) +
+  ylim(0, quantile(ld2$ld.MonthlyLoanPayment, 0.99)) +
+  geom_smooth()
+
+```
+
+```{r echo=FALSE, Multivariate_Plots1}
+
+ggplot(aes(x = ld.BorrowerAPR, 
+  y = ld.MonthlyLoanPayment), data = ld2) +
+  geom_point(aes(color = ld.LenderYield), alpha = 0.2, position = 'jitter') +
+  coord_cartesian(xlim = c(0, 0.4), ylim = c(0, 1500)) 
+  
+
+```
+
+
+```{r echo=FALSE, Multivariate_Plots2}
+
+ggplot(aes(x = ld.Term, 
+  y = ld.MonthlyLoanPayment), data = subset(ld2, ld.StatedMonthlyIncome < 20000)) +
+  geom_point(aes(color = ld.StatedMonthlyIncome)) +
+  scale_x_continuous(breaks = c(12,36,60))
+  
+
+```
+
+```{r echo=FALSE, Multivariate_Plots3}
+
+ggplot(aes(x = ld.Term, 
+  y = ld.MonthlyLoanPayment), data = ld2) +
+  geom_point(aes(color = ld.LenderYield)) +
+  scale_x_continuous(breaks = c(12,36,60))
+  
+
+```
+
+```{r echo=FALSE, Multivariate_Plots4}
+
+ggplot(aes(x = ld.StatedMonthlyIncome, 
+  y = ld.LenderYield), data = ld2) +
+  geom_point(aes(color = ld.BorrowerAPR), alpha = 0.2, position = 'jitter') +
+  xlim(0, quantile(ld2$ld.StatedMonthlyIncome, 0.99)) +
+  ylim(0, 0.4) 
+  
+
+```
+
+
+
+
+# Multivariate Analysis
+
+### Main Points of Interest
+
+When monthly loan payments are plotted against monthly incomes by the upper and lower tiers of credit grades, there is a clear distinction. The lower credit grades have lower incomes and monthly payments under $250 while those with high credit grades can have higher monthly payments no matter what their income.
+
+The main point that these plots corroborate is that there is a higher lender yield for low monthly payments diffused over time while high monthly payments paid off quickly do not yield as much for lenders. Those with lower incomes tend to pay lower monthly incomes, but pay more in interest while those with higher incomes tend to pay off their loans quickly with higher monthly payments, but less interest.
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+ggplot(aes(x = ld.MonthlyLoanPayment), data = subset(ld2,  ld.Occupation == "Professional" | ld.Occupation == "Computer Programmer" | ld.Occupation == "Executive" | ld.Occupation == "Teacher" | ld.Occupation == "Sales - Retail" | ld.Occupation == "Administrative Assistant")) +
+  geom_histogram() +
+  facet_wrap(~ld.Occupation, scales = "free") +
+  scale_x_continuous(limits = c(1,1000), breaks = seq(0,1000,200)) +
+  xlab("Monthly Loan Payments") +
+  ggtitle("Counts of Monthly Loan Payments by Top Occupations")
+```
+
+### Description One
+
+These histograms compare monthly loan payments by occupation. Most loans for all occupations are below $200/month, but higher paying occupations such as computer programmers and executives also have a high number of loans above $400/month while other occupations do not.
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+ggplot(aes(x = ld.StatedMonthlyIncome, 
+  y = ld.LenderYield), data = subset(ld2, ld.CreditGrade == "A" | ld.CreditGrade == "AA" | ld.CreditGrade == "HR" | ld.CreditGrade == "E" | ld.CreditGrade == "NC")) +
+  geom_point(aes(color = ld.CreditGrade), alpha = 0.2, position = 'jitter') +
+  xlim(0, 10000) +
+  ylim(0,0.4) +
+  geom_smooth() +
+  xlab("Monthly Income") +
+  ylab("Lender Yield") +
+  ggtitle("Relationship Between Lender Yield and Monthly Income by Credit Grades") 
+```
+
+### Description Two
+
+This plot shows the gap between credit grades. Regardless of income, borrowers with a good credit grade have a low lender yield and borrowers with a bad credit grade have a high lender yield. 
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+ggplot(aes(x = ld.BorrowerAPR, 
+  y = ld.LenderYield), data = subset(ld2, ld.StatedMonthlyIncome < 10000)) +
+  geom_point(aes(color = ld.StatedMonthlyIncome), alpha = 0.2, position = 'jitter') +
+  ggtitle("Relationship between Lender Yield and Borrower APR by Monthly Income") +
+  xlab("Borrower APR") +
+  ylab("Lender Yield") +
+  facet_wrap(~ld.Term)
+
+ 
+```
+
+### Description Three
+
+This plot shows the linear relationship between lender yield and borrower APR across the different lengths of a loan. The 36 month loans have the biggest range and the most variance. The highest lender yields and borrower APRs seem to correlate with lower incomes.
+
+------
+
+# Reflection
+
+Based on my analysis there seems to be a relationship between lender yield, borrower APR, length of loan and credit grades. 
+
+This data set had so many variables that it was difficult to decide which variables to explore. This report is only a sliver of what can be explored. It would be interesting to create a new variable subtracting the creation date from the closing date to see how various factors change through time. 
+
